@@ -118,7 +118,7 @@ else
     done
 
     # Select the file corresponding to the index entered by the user.
-    for j in $(seq 0 $((n - 1))); do
+    for j in $(awk "BEGIN { for(i = 0; i < $n; i += 1) print i }"); do
         [ $j -eq $i ] && selected_file="$1"
         shift
     done
