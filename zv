@@ -97,8 +97,14 @@ if [ $# -eq 1 ] || $quiet; then
     selected_file="$1"
 else
     echo "Select a file to open:"
-    printf '%s\n' "$@" | nl -w 2 -s ') '
-    n=$#
+    printf '%s\n' "$@" | head -n 10 | nl -v 0 -w 1 -s ') '
+
+    if [ $# -gt 10 ]; then
+        echo "..."
+        n=10
+    else
+        n=$#
+    fi
 
     while true; do
         printf '#? '
@@ -107,12 +113,12 @@ else
         # If the user presses Ctrl-D or Enter, exit the script.
         [ -z "$i" ] && exit
 
-        # Exit the loop if the input is a number between 1 and $n.
-        [ $i -eq $i ] 2>/dev/null && [ $i -ge 1 ] && [ $i -le $n ] && break
+        # Exit the loop if the input is a number between 0 and $n.
+        [ $i -eq $i ] 2>/dev/null && [ $i -ge 0 ] && [ $i -lt $n ] && break
     done
 
     # Select the file corresponding to the index entered by the user.
-    for j in $(seq $n); do
+    for j in $(seq 0 $((n - 1))); do
         [ $j -eq $i ] && selected_file="$1"
         shift
     done
