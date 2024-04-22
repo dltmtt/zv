@@ -1,0 +1,127 @@
+#!/bin/sh
+
+version_number="1.0.0"
+
+# Vim does not use $XDG_STATE_HOME/vim/viminfo, but if the user changed the
+# location of the viminfo file to follow the XDG Base Directory Specification,
+# this script will respect that.
+if [ -z "$ZV_VIMINFO" ]; then
+    if [ -f "${XDG_STATE_HOME:-$HOME/.local/state}/vim/viminfo" ]; then
+        ZV_VIMINFO="${XDG_STATE_HOME-$HOME/.local/state}/vim/viminfo"
+    else
+        ZV_VIMINFO="$HOME/.viminfo"
+    fi
+fi
+
+# Prints the usage message and exits with the given status code (default: 0).
+usage() {
+    printf 'Usage: %s [-ahnqrv] [-c command] [regex]\n' "$(basename "$0")"
+    exit ${1:-0}
+}
+
+# Default values for the options and the option-arguments.
+all=false
+: "${ZV_CMD:=${EDITOR:-vim}}"
+help=false
+dry_run=false
+quiet=false
+restrict=false
+version=false
+
+while getopts ac:hnqrv opt; do
+    case $opt in
+    a) all=true ;;
+    c) ZV_CMD=$OPTARG ;;
+    h) help=true ;;
+    n) dry_run=true ;;
+    q) quiet=true ;;
+    r) restrict=true ;;
+    v) version=true ;;
+    *) usage 2 ;;
+    esac
+done
+
+if $help; then
+    usage
+fi
+
+if $version; then
+    echo "v$version_number"
+    exit
+fi
+
+shift $((OPTIND - 1))
+
+regex="$*"
+
+# If the regex is an existing file, open it directly.
+if [ -f "$regex" ]; then
+    set -- "$regex"
+else
+    # Clear the positional parameters.
+    set --
+    while IFS=' ' read -r line; do
+        # Skip lines that do not start with a "> ".
+        [ "${line#> }" = "$line" ] && continue
+
+        # Extract the file path from the line
+        file="$(printf '%s' "${line#> }" | sed "s|~/|$HOME/|")"
+
+        # The viminfo file may contain files that no longer exist.
+        # If the -a option is not set, skip the file if it does not exist.
+        $all || [ -f "$file" ] || continue
+
+        match_found=true
+
+        # Check if the file matches the regex.
+        if ! printf '%s' "$file" | grep -Eq "$regex"; then
+            match_found=false
+        fi
+
+        # Check if the file is in the current directory or any of its subdirectories.
+        if $restrict && ! find . -name "$file" -type f | grep -q "$file"; then
+            match_found=false
+        fi
+
+        # If a match was found, append the file to the positional parameters.
+        $match_found && set -- "$@" "$file"
+    done <"$ZV_VIMINFO"
+fi
+
+if [ $# -eq 0 ]; then
+    echo "No matches found."
+    exit 1
+fi
+
+if [ $# -eq 1 ] || $quiet; then
+    selected_file="$1"
+else
+    echo "Select a file to open:"
+    printf '%s\n' "$@" | nl -w 2 -s ') '
+    n=$#
+
+    while true; do
+        printf '#? '
+        read -r i
+
+        # If the user presses Ctrl-D or Enter, exit the script.
+        [ -z "$i" ] && exit
+
+        # Exit the loop if the input is a number between 1 and $n.
+        [ $i -eq $i ] 2>/dev/null && [ $i -ge 1 ] && [ $i -le $n ] && break
+    done
+
+    # Select the file corresponding to the index entered by the user.
+    for j in $(seq $n); do
+        [ $j -eq $i ] && selected_file="$1"
+        shift
+    done
+fi
+
+# $ZV_CMD is unquoted because word splitting is intended.
+# The user may want to pass additional arguments to the command.
+if $dry_run; then
+    printf '%s %s\n' $ZV_CMD "$selected_file"
+else
+    $ZV_CMD "$selected_file"
+fi

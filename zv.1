@@ -1,0 +1,87 @@
+.Dd April 17, 2024
+.Dt V 1
+.Os
+.Sh NAME
+.Nm zv
+.Nd z for vim
+.Sh SYNOPSIS
+.Nm
+.Op Fl ahnqrv
+.Op Fl c Ar command
+.Op Ar regex
+.Sh DESCRIPTION
+The
+.Nm
+utility uses viminfo's list of recently edited files to open one quickly no matter where you are in the filesystem.
+.Pp
+By default, it will open the most recently edited file matching the provided regular expression.
+.Sh OPTIONS
+.Bl -tag -width Ds
+.It Fl a
+Don't skip files that cannot be found.
+.It Fl c Ar command
+Open the file with the given command.
+.It Fl h
+Show a brief help message and exit.
+.It Fl n
+Print the command that would be run without running it.
+.It Fl q
+Choose the first match without prompting.
+.It Fl r
+Restrict matches to the current directory and its subdirectories.
+.It Fl v
+Show the version number and exit.
+.El
+.Sh ENVIRONMENT
+.Bl -tag -width XDG_STATE_HOME
+.It Ev EDITOR
+Program to use to open files if
+.Ev ZV_CMD
+is not set.
+.It Ev ZV_CMD
+The command to use to open files. It can be overridden with the
+.Fl c
+option.
+.It Ev ZV_VIMINFO
+The path to the
+.Pa viminfo
+file to use to read the list of recently edited files.
+.It Ev XDG_STATE_HOME
+The path to the XDG state directory contaning the
+.Pa vim
+directory with the
+.Pa viminfo
+file.
+.El
+.Sh FILES
+.Bl -tag -width $XDG_STATE_HOME/vim/viminfo -compact
+.It Pa $XDG_STATE_HOME/vim/viminfo
+File used to read the list of recently edited files if
+.Ev ZV_VIMINFO
+is not set.
+.It Pa ~/.viminfo
+File used to read the list of recently edited files if
+.Ev ZV_VIMINFO
+is not set and
+.Pa $XDG_STATE_HOME/vim/viminfo
+does not exist.
+.El
+.Sh EXAMPLES
+.Bl -bullet
+.It
+Choose between files in the current directory matching
+.Sq foo
+.Pp
+.Dl $ zv -r foo
+.It
+Print what would happen if you wanted to open the most recently edited file matching
+.Sq bar
+with the command foo called with the
+.Sq -a
+option.
+.Pp
+.Dl $ zv -c 'foo -a' -q -n bar
+.Dl foo -a /path/to/bar
+.El
+.Sh SEE ALSO
+.Xr vim 1
