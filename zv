@@ -58,7 +58,7 @@ regex="$*"
 if [ -f "$regex" ]; then
     set -- "$regex"
 else
-    # Clear the positional parameters.
+    # Unset all positional parameters.
     set --
     while IFS=' ' read -r line; do
         # Skip lines that do not start with a "> ".
@@ -111,16 +111,18 @@ else
         read -r i
 
         # If the user presses Ctrl-D or Enter, exit the script.
-        [ -z "$i" ] && exit
+        [ -z $i ] 2>/dev/null && exit
 
         # Exit the loop if the input is a number between 0 and $n.
         [ $i -eq $i ] 2>/dev/null && [ $i -ge 0 ] && [ $i -lt $n ] && break
     done
 
     # Select the file corresponding to the index entered by the user.
-    for j in $(awk "BEGIN { for(i = 0; i < $n; i += 1) print i }"); do
+    j=0
+    while [ $j -lt $n ]; do
         [ $j -eq $i ] && selected_file="$1"
         shift
+        j=$((j + 1))
     done
 fi
 
