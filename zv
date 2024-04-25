@@ -31,7 +31,7 @@ version=false
 while getopts ac:hnqrv opt; do
     case $opt in
     a) all=true ;;
-    c) ZV_CMD=$OPTARG ;;
+    c) ZV_CMD="$OPTARG" ;;
     h) help=true ;;
     n) dry_run=true ;;
     q) quiet=true ;;
@@ -99,12 +99,7 @@ else
     echo "Select a file to open:"
     printf '%s\n' "$@" | head -n 10 | nl -v 0 -w 1 -s ') '
 
-    if [ $# -gt 10 ]; then
-        echo "..."
-        n=10
-    else
-        n=$#
-    fi
+    [ $# -gt 10 ] && n=10 || n=$#
 
     while true; do
         printf '#? '
